@@ -7,7 +7,7 @@ Author: Diana Low, Efthymios Motakis
 Maintainer: Diana Low <dlow@imcb.a-star.edu.sg>
 Description: Identifying distinct subpopulations through multiscale time series analysis
 License: GPL-2
-Depends: R (>=2.15.1), methods, ggplot2, changepoint, wavethresh, tseries, pvclust, fBasics, grid, reshape, scales
+Depends: R (>= 2.15.1), methods, ggplot2, changepoint, wavethresh, tseries, pvclust, fBasics, grid, reshape, scales
 biocViews: Proteomics, TimeCourse, Visualization, Clustering
 Collate: AllClasses.R AllGenerics.R show-methods.R plot-methods.R
         pvclust-mods.R helpers.R
