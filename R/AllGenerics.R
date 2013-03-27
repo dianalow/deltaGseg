@@ -127,7 +127,7 @@ setMethod("clusterSegments",
                 }
                 plot(hc,labels=ll,xlab="",sub="",main="Hierarchical clustering with P-values")
                 if(!is.null(pv)) text.pvclust(pv,cex=0.7)
-                cc<-identify(hc,MAXCLUSTER=length(hc$order))
+                cc<-identify.hclust(hc,N=length(hc$order),MAXCLUSTER=length(hc$order))
               }
               
               rescc<-matrix(0,2,1)

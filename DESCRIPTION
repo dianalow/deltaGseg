@@ -1,7 +1,7 @@
 Package: deltaGseg
 Type: Package
 Title: deltaGseg
-Version: 0.99.2
+Version: 0.99.3
 Date: 2013-02-18
 Author: Diana Low, Efthymios Motakis
 Maintainer: Diana Low <dlow@imcb.a-star.edu.sg>

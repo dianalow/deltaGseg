@@ -16,7 +16,6 @@ setMethod(f="plot",signature="Trajectories",
                 dat<-data.frame(trajs[[i]])
                 colnames(dat)<-c("Time","FreeEnergy")
                 ll<-c(ll,(nrow(dat)+ll[i]))
-                print(ll)
                 all<-rbind(all,dat)
                 posx<-c(posx,(ll[(i+1)]+ll[i])/2)
                 labelp<-c(labelp,paste("adf.test p-value = ",round(avd[i],3)))
@@ -41,7 +40,7 @@ setMethod(f="plot",signature="Trajectories",
               
               posy<-c(rep(max(all[,2])+2,ntraj),rep(min(all[,2])-2,ntraj))
               posx<-rep(posx,2)
-              print(p1+option1+option2+annotate("text",x=posx,y=posy,label=c(filenames,labelp)))              
+              plot(p1+option1+option2+annotate("text",x=posx,y=posy,label=c(filenames,labelp)))              
             }
             else{
               dat<-data.frame(trajs[[name]])
@@ -53,7 +52,7 @@ setMethod(f="plot",signature="Trajectories",
                 theme(axis.title.x=element_text(size=16))+theme(axis.title.y=element_text(size=16))+
                 ggtitle(paste(name,'\n',paste("adf.test p-value = ",round(avd[which(x@filenames==name)],3),sep="")))
               if(length(mm)>0) option1<-geom_vline(xintercept=mm,color="#3399FF")
-              print(p1+option1)
+              plot(p1+option1)
             }        
           })
 
@@ -92,7 +91,7 @@ setMethod(f="plot",signature="TransTrajectories",
               posx<-rep(posx,2)       
               option2<-annotate("text",x=posx,y=posy,label=c(filenames,labelp),size=4)
             }
-            print(p1+option1+option2)
+            plot(p1+option1+option2)
           })
 
 setMethod(f="plot",signature="SegTrajectories",
@@ -116,7 +115,7 @@ setMethod(f="plot",signature="SegTrajectories",
               scale_x_continuous("snapshots extracted from replicates")+
               geom_vline(xintercept=changepoints[2:length(changepoints)],linetype = "longdash",color="darkgray")
             
-            print(p1+annotate("text",x=posx,y=posy,label=ll,size=4))
+            plot(p1+annotate("text",x=posx,y=posy,label=ll,size=4))
           })
 
 setMethod(f="plot",signature="SegSeriesTrajectories",
@@ -134,5 +133,5 @@ setMethod(f="plot",signature="SegSeriesTrajectories",
               theme(axis.title.x=element_text(size=16))+theme(axis.title.y=element_text(size=16))+
               scale_x_continuous("snapshots extracted from replicates")+
               geom_vline(xintercept=changepoints[2:length(changepoints)],linetype = "longdash",color="darkgray")
-            print(p1)
+            plot(p1)
           })
