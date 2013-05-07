@@ -126,7 +126,7 @@ setMethod(f="plot",signature="SegSeriesTrajectories",
             colnames(aa)<-c("Time","FreeEnergy","Subpopulations")
             aa[,3]<-as.character(aa[,3])
             p1<-ggplot(aa,aes_string(x='Time',y='FreeEnergy',color='Subpopulations')) +
-              geom_point(aes_string(shape='Subpopulations'),size=3)+scale_color_hue()+
+              geom_point(aes_string(shape='Subpopulations'),size=3)+scale_color_grey(end=0.7)+
               ggtitle("Identified subpopulations")+
               theme(legend.title=element_text(size=15),legend.text=element_text(size=12),plot.title=element_text(size=20))+
               theme(axis.text.x=element_text(size=14))+theme(axis.text.y=element_text(size=14))+
