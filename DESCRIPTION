@@ -1,8 +1,8 @@
 Package: deltaGseg
 Type: Package
 Title: deltaGseg
-Version: 1.1.0
-Date: 2013-02-18
+Version: 1.1.1
+Date: 2013-03-07
 Author: Diana Low, Efthymios Motakis
 Maintainer: Diana Low <dlow@imcb.a-star.edu.sg>
 Description: Identifying distinct subpopulations through multiscale time series analysis
