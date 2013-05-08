@@ -46,5 +46,5 @@ Diana H.P. Low, Efthimios Motakis
 }
 \examples{
 data(deltaGseg)
-traj1.denoise<-denoiseSegments(traj1.tr,seg_method="SegNeigh",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200)
+traj1.denoise<-denoiseSegments(traj1.tr,seg_method="BinSeg",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200)
 }
