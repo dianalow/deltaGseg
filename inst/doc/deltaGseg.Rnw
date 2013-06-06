@@ -1,4 +1,5 @@
 \documentclass[english]{article}
+%\VignetteEngine{knitr}
 %\VignetteIndexEntry{deltaGseg}
 \usepackage[T1]{fontenc}
 \usepackage{geometry}

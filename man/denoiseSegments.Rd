@@ -7,7 +7,7 @@ Wavelet denoising of trajectory series (segments)
 This function computes Augmented Dickey-Fuller test for weak-stationarity and carries out segmentation and wavelets denoising.
 }
 \usage{
-denoiseSegments(object,seg_method="SegNeigh",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200)
+denoiseSegments(object,seg_method="BinSeg",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200)
 }
 \arguments{
   \item{object}{ An object of class "Trajectories" or "TransTrajectories". (the output of functions \code{\link{parseTraj}} or \code{\link{transformSeries}}, respectively).}

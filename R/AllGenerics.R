@@ -95,9 +95,13 @@ setGeneric("clusterSegments",
 setMethod("clusterSegments",
           signature=c(object="SegTrajectories"),
           definition=function(object,intervention="groups",pv=NULL,graphics=NULL){
+            #check arguments
+            if(!is.element(intervention,c('groups','pvclust'))) stop(paste(intervention,'is not a valid input for argument "intervention".'))
+            
             data<-object@smatrix
             changepoints<-c(c(1,which(diff(data[,28])!=0)+1))
             ser<-unique(data[,28])
+            
             if(is.null(graphics)) graphics<-hue_pal()(length(unique(data[,6]))) else graph<-graphics
             graph<-c()
             for(i in 1:length(ser)){
@@ -106,6 +110,7 @@ setMethod("clusterSegments",
             }
             ll<-paste("s",1:length(unique(data[,5])),sep="")
             cp<-c(0,unique(data[,5]))
+            
             if(intervention=="pvclust"){
               hc<-hclust(mydist(t(unique(data[,7:27]))),"average")
               cc<-c()
@@ -113,6 +118,7 @@ setMethod("clusterSegments",
               message("Please ensure that ALL segments are grouped (boxed).\nOtherwise, function will not exit.")
               message("To exit, click Esc (Windows/Linux) or Ctrl-click (Mac)")
               layout(matrix(c(1,2), 2, 1, byrow = TRUE))
+              
               while(length(as.numeric(unlist(cc)))!=(length(cp)-1)){
                 plot(1:cp[2],data[1:cp[2],1],xlab="Time",ylab="FreeEnergy",xlim=c(0,nrow(data)),ylim=c(min(data[,1]),(max(data[,1])+5)),col=graph[1],pch=20,cex=0.5,main="")
                 lines(1:cp[2],data[1:cp[2],2],col=graphics[1],lwd=2)
@@ -128,6 +134,9 @@ setMethod("clusterSegments",
                 plot(hc,labels=ll,xlab="",sub="",main="Hierarchical clustering with P-values")
                 if(!is.null(pv)) text.pvclust(pv,cex=0.7)
                 cc<-identify(hc,N=length(hc$order),MAXCLUSTER=length(hc$order))
+                
+                #case where nothing is selected, return 1 subpopulation
+                if(length(unlist(cc))==0) cc<-list(hc$order)
               }
               
               rescc<-matrix(0,2,1)
@@ -139,7 +148,7 @@ setMethod("clusterSegments",
               ct<-rescc[2,]
             }
             
-            else {
+            else if(intervention=='groups'){
               par(mfrow=c(2,1))
               plot(1:cp[2],data[1:cp[2],1],xlab="Time",ylab="FreeEnergy",xlim=c(0,nrow(data)),ylim=c(min(data[,1]),(max(data[,1])+5)),col=graph[1],pch=20,cex=0.5,main="")
               lines(1:cp[2],data[1:cp[2],2],col=graphics[1],lwd=2)
@@ -212,13 +221,16 @@ setMethod("clusterSegments",
           })
 
 setGeneric("denoiseSegments",
-           function(object,seg_method="SegNeigh",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200){
+           function(object,seg_method="BinSeg",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200){
              standardGeneric("denoiseSegments")
            })
 
 setMethod("denoiseSegments",
           signature=c(object="Trajectories"),
-          definition=function(object,seg_method="SegNeigh",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200){
+          definition=function(object,seg_method="BinSeg",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200){
+            #check arguments
+            if(!is.element(seg_method,c('BinSeg','SegNeigh'))) stop(paste(seg_method,'is not a valid input for argument "seg_method".'))
+            
             #check series length
             files<-getTraj(object)
             message("Checking series length against minobs.....")
@@ -246,24 +258,35 @@ setMethod("denoiseSegments",
               adf<-totalavd[ff]
               
               if(class(object)=="TransTrajectories") {
+                
                 if(filenames[ff] %in% names(object@difftraj)) {
                   dat0<-dat
                   dat<-object@difftraj[[filenames[ff]]][,2]
                 }
               }
               res<-multiple.mean.norm(dat,mul.method=seg_method,penalty="Asymptotic",pen.value=0.01,Q=maxQ,class=FALSE)
+              if(seg_method=="BinSeg") {
+                mm_est_binseg<-res$cps[1,1:res$op.cpts]
+                cp<-sort(c(0,mm_est_binseg,length(dat)))
+              }
               
-              if(seg_method=="SegNeigh") cp<-sort(c(0,res$cps[maxQ,1:(maxQ-1)],length(dat)))
-              else if(seg_method=="BinSeg") cp<-sort(c(0,res$cps[1,],length(dat)))
-              
+              else if(seg_method=="SegNeigh") {
+                mm_est_segneigh<-res$cps[(res$op.cpts+1),1:res$op.cpts]
+                cp<-sort(c(0,mm_est_segneigh,length(dat)))                
+              }
+
               dd<-diff(cp)
               for(i in 1:length(dd)) if(dd[i]<15) cp[(i+1)]<- -999
               cp<-cp[cp!=-999]
-              cp[length(cp)]<-length(dat)
+
+              if(length(cp)==1) cp<-c(0,length(dat))
+              else cp[length(cp)]<-length(dat)
+
               dd<-diff(cp)
               if(class(object)=="TransTrajectories") {
                 if(filenames[ff] %in% names(object@difftraj)) dat<-dat0
               }
+
               for(i in 1:(length(cp)-1)){
                 a<-dat[(cp[i]+1):cp[(i+1)]]
                 all<-segden1(data=a,cpoint_low=cp[i],cpoint_high=cp[(i+1)],fn,factor,thresh_level,segment_number=i,series_number=ff)
@@ -344,6 +367,9 @@ setGeneric("diagnosticPlots",
 setMethod("diagnosticPlots",
           signature=c(object="SegSeriesTrajectories"),
           definition=function(object,norm.test="KS",single.series=FALSE){
+            #check arguments
+            if(!is.element(norm.test,c('KS','Shapiro','Agost'))) stop(paste(norm.test,'is not a valid input for argument "norm.test".'))
+            
             files<-getTNames(object)
             data<-object@ssmatrix
             uu<-as.character(unique(data$seriesID))
@@ -359,11 +385,11 @@ setMethod("diagnosticPlots",
                   textplot<-ggplot(data.frame(ttext)) +
                     geom_text(data=data.frame(ttext),hjust=0,aes(x=0.4,y=0.8,label=ttext))
                 }
-                if(norm.test=="Shapiro"){
+                else if(norm.test=="Shapiro"){
                   pp<-shapiroTest(as.numeric(as.vector(data$residuals))[which(data$seriesID==uu[i])])@test$p.value[[1]]
                   mtext<-paste("Shapiro p-value = ",round(pp,3))
                 }
-                if(norm.test=="Agost"){
+                else if(norm.test=="Agost"){
                   pp<-as.numeric(dagoTest(as.numeric(as.vector(data$residuals))[which(data$seriesID==uu[i])])@test$p.value)
                   ttext<-c()
                   ttext.1<-c("D'Agostino p-value = ","Skewness p-value = ","Kurtosis p-value = ")
@@ -408,13 +434,13 @@ setMethod("diagnosticPlots",
                 textplot<-ggplot(data.frame(ttext)) +
                   geom_text(data=data.frame(ttext),hjust=0,aes(x=0.4,y=0.8,label=ttext))
               }
-              if(norm.test=="Shapiro"){
+              else if(norm.test=="Shapiro"){
                 pp<-shapiroTest(as.numeric(as.vector(data$residuals)))@test$p.value[[1]]
                 ttext<-paste("Shapiro p-value = ",round(pp,3))
                 textplot<-ggplot(data.frame(ttext)) +
                   geom_text(data=data.frame(ttext),hjust=0,aes(x=0.4,y=0.8,label=ttext))
               }
-              if(norm.test=="Agost"){
+              else if(norm.test=="Agost"){
                 pp<-as.numeric(dagoTest(as.numeric(as.vector(data$residuals)))@test$p.value)
                 ttext<-c()
                 ttext.1<-c("D'Agostino p-value = ","Skewness p-value = ","Kurtosis p-value = ")
@@ -507,7 +533,8 @@ setMethod("splitTraj",
             mm<-as.list(rep(0,ntraj))
             for(i in 1:ntraj){
               dat<-object@trajlist[[i]]
-              mm[[i]]<-sort(multiple.mean.norm(dat[,2],mul.method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=segsplits[i],class=FALSE)$cps[1,])
+              mm_est_binseg<-multiple.mean.norm(dat[,2],mul.method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=segsplits[i],class=FALSE)
+              mm[[i]]<-sort(mm_est_binseg$cps[1,1:mm_est_binseg$op.cpts])
               names(mm)[i]<-tnames[i]
             }
             return(mm)
@@ -521,15 +548,16 @@ setGeneric("transformSeries",
 setMethod("transformSeries",
           signature=c(object="Trajectories",breakpoints="ANY"),
           definition=function(object,method='splitting',breakpoints=1){
-            
             options(warn=-1)
+            #check arguments
+            if(!is.element(method,c('splitting','override_splitting','differentiation'))) stop(paste(method,'is not a valid input for argument "method".'))
             
             files<-getTraj(object)
             totalavd<-getAVD(object)
             filenames<-getTNames(object)
             
             if(method=="override_splitting" & length(files)!=length(breakpoints)) stop("parameter segsplits must be a list of breakpoints equal to # of trajectories.")
-            if(method=="splitting" & length(breakpoints)!=1) stop("parameter segsplits must be an integer specifying number of splits required.") 
+            else if(method=="splitting" & length(breakpoints)!=1) stop("parameter segsplits must be an integer specifying number of splits required.") 
             
             avd<-leg_files<-c()
             results<-difftraj<-list()
@@ -570,7 +598,8 @@ setMethod("transformSeries",
               }
               
               else if(method=="splitting"){
-                mm<-c(sort(multiple.mean.norm(dat[,2],mul.method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=breakpoints,class=FALSE)$cps[1,]),nrow(dat))
+                mm_est_binseg<-multiple.mean.norm(dat[,2],mul.method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=breakpoints,class=FALSE)
+                mm<-c(sort(mm_est_binseg$cps[1,1:mm_est_binseg$op.cpts]),nrow(dat))
                 k<-1
                 
                 for(j in 1:length(mm)){
