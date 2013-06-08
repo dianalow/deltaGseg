@@ -6,7 +6,6 @@
 \geometry{verbose,lmargin=3cm,rmargin=3cm,tmargin=3cm,bmargin=3cm}
 \usepackage{babel,hyperref}
 \begin{document}
-\SweaveOpts{concordance=TRUE}
 \title{deltaGseg}
 \author{Diana HP Low\textsuperscript{1}, Efthymios Motakis\textsuperscript{2} \\ \\ Institute of Molecular and Cell Biology\textsuperscript{1}, Bioinformatics Institute\textsuperscript{2}\\ Agency for Science, Technology and Research (A*STAR), Singapore
 \\ dlow@imcb.a-star.edu.sg\textsuperscript{1} \\ emotakis@hotmail.com\textsuperscript{2}
