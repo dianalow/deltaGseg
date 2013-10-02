@@ -33,7 +33,7 @@ setMethod(f="show",signature="TransTrajectories",function(object){
     cat("\n\tNo transformation was done.")
   }
   cat("\n\n")
-  callNextMethod()
+  invisible(callNextMethod())
 })
 
 setMethod(f="show",signature="SegTrajectories",function(object){
