@@ -1,0 +1,232 @@
+\documentclass[english]{article}
+%\VignetteEngine{knitr}
+%\VignetteIndexEntry{deltaGseg}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{verbose,lmargin=3cm,rmargin=3cm,tmargin=3cm,bmargin=3cm}
+\usepackage{babel,hyperref}
+\begin{document}
+\title{deltaGseg}
+\author{Diana HP Low\textsuperscript{1}, Efthymios Motakis\textsuperscript{2} \\ \\ Institute of Molecular and Cell Biology\textsuperscript{1}, Bioinformatics Institute\textsuperscript{2}\\ Agency for Science, Technology and Research (A*STAR), Singapore
+\\ dlow@imcb.a-star.edu.sg\textsuperscript{1} \\ emotakis@hotmail.com\textsuperscript{2}
+}
+\maketitle
+\tableofcontents{}
+\section{Introduction}
+\emph{deltaGseg} aims to identify subpopulations within time series data, and here we have applied it to molecular dynamic (MD) simulation free binding energies to provide a descriptive free energy landscape where different macrostates can coexist [1,2]. The theoretical and methodological considerations are analytically discussed in the main papers [1,2]. Here, we will demonstrate how to perform macrostate identification analysis with \emph{deltaGseg}.
+
+\section{Installing and loading the deltaGseg package}
+We recommend that users install the package via Bioconductor, since this will automatically detect and install all required dependencies. The Bioconductor installation procedure is described at \href{http://www.bioconductor.org/docs/install/}{http://www.bioconductor.org/docs/install/}.To install \emph{deltaGseg}, launch a new R session, and in a command terminal either type or copy/paste:
+<<eval=FALSE>>=
+source("http://www.bioconductor.org/biocLite.R")
+biocLite("deltaGseg")
+@
+
+\section{Using deltaGseg}
+\subsection{Loading the deltaGseg}
+To load the deltaGseg package, simply:-
+<<loadingPackage,message=FALSE>>=
+library(deltaGseg)
+@
+
+This package also includes all the variables generated in this vignette, and they can be loaded by:
+<<>>=
+data(deltaGseg)
+@
+\subsection{Step 1: Data loading, visualization and testing}
+\emph{deltaGseg} takes in 2-column, space-separated files of timepoints (column 1) and time-series measurement (column 2). For our example, the binding energy of a system (e.g. between a protein and its ligand) can be extracted from a MD trajectory as a time series measurement. Details on how to extract binding energies can be found at \href{http://ambermd.org/tutorials/advanced/tutorial4/py\_script}{http://ambermd.org/tutorials/advanced/tutorial4/py\_script}. 
+Typically, replicates are carried out for a system by running multiple simulations with slightly different starting conditions (eg. initial configuration or seed number). We will aim to identify different macrostates from this data using time series analysis, by estimating the significance of existence of multiple subpopulations.  
+
+We load three replicated series, i.e. the tab delimited 2-column data files \texttt{D\_GBTOT1, D\_GBTOT2, D\_GBTOT3} where the first column contains the time data t = 1, 2, ..., 5000 and the second column the free binding energy values $B_t$. The variable \texttt{path} defines the directory where the files reside, and in this case, we will look in the directory where \emph{deltaGseg} has been installed. The variable \texttt{files} defines the filenames to be read. If left blank, it will read the entire directory's content.   
+
+<<loading-trajectories,tidy=FALSE,warning=FALSE>>=
+dir<-system.file("extdata",package="deltaGseg")
+traj1<-parseTraj(path=dir, files=c("D_GBTOT1","D_GBTOT2","D_GBTOT3"))
+@
+Typing the name of the object (i.e. \texttt{traj1}) will give a brief description of its contents. 
+<<test>>=
+traj1
+@
+Here it shows that there were 3 files loaded, each with 5000 time points. Next, we visualize the series and test the weak-stationarity assumption. Formally, the null hypothesis "$H_0$: the series is not weakly-stationary" is rejected if adf p-value $\leq0.05$ [3]. We notice that the adf p-value of the D\_GBTOT3 series is higher than 0.05 indicating that we do not have enough evidence to reject $H_0$ of non-stationarity. An initial plot (Figure 1) can be made to view the time series. \texttt{D\_GBTOT3} exhibits a significant shift around the midpoint (approx t=12775) resulting in the high adf p-value. 
+<<plottraj1,eval=FALSE>>=
+plot(traj1,name='all')
+@
+\begin{figure}[!htb]
+\includegraphics[width=6in]{traj1}
+\caption{The complete \texttt{traj1} series}
+\end{figure}
+
+The \texttt{transformSeries} function identifies which series is "inappropriate" (i.e. \texttt{D\_GBTOT3}) and splits it into two weakly-stationary subseries (the parameter specifying the number of splits is decided after data visualization), which are segmented (and subsequently modeled) independently. We can see here that \texttt{D\_GBTOT3} has now been split (\texttt{D\_GBTOT3\_1}, \texttt{D\_GBTOT3\_2}) and the resulting subseries has adf pvalues $\leq0.05$. Plotting the transformed series will now indicate the new breakpoint.      
+<<traj1,tidy=TRUE,warning=FALSE>>=
+traj1.tr<-transformSeries(object=traj1,method='splitting',breakpoints=1)
+traj1.tr
+@
+
+<<figure1,warning=FALSE,fig.width=8,eval=FALSE>>=
+plot(traj1.tr)
+@
+
+\begin{figure}[!htb]
+\includegraphics[width=6in]{traj1tr}
+\caption{The transformed series, with newly defined breakpoint.}
+\end{figure}
+
+Another way to derive weakly stationary (sub)series is by data differentiation $B_t$-$B_{t-1}$. This technique is suitable for series with a significant trend-like behavior, causing the weak stationarity assumption to fail. Differentiation removes the trend and returns a transformed series that can be safely segmented. We show such an example in the Appendix. 
+
+\subsubsection{Other possible reasons for splitting a time-series}
+Long series of e.g. more than 50000 time points could also be split into smaller subseries to take advantage of R's computation time. \texttt{splitTraj} identifies appropriate breakpoints:  
+<<breakpoints,warning=FALSE,tidy=TRUE>>=
+all_breakpoints<-splitTraj(traj1,segsplits=c(5,5,5))
+all_breakpoints
+@
+Here, \texttt{splitTraj} has identified 5 possible breakpoints (number depends on user input). The original series can now be plot with all determined breakpoints.
+<<plot-breakpoints,warning=FALSE,fig.width=8,eval=FALSE>>=
+plot(traj1,breakpoints=all_breakpoints) 
+@
+\begin{figure}[!htb]
+\includegraphics[width=6in]{traj1break}
+\caption{Trajectories with breakpoints}
+\end{figure}
+Often, there is little use in taking all defined breakpoints, so here we elect to pick 3 breakpoints (for each series). \texttt{chooseBreaks} selects evenly-spaced breakpoints (this is optional, and users can choose the split points manually, as a list of lists). 
+<<mybreaks,warning=FALSE,tidy=TRUE,warning=FALSE>>=
+mybreaks<-chooseBreaks(all_breakpoints,numbreaks=3)
+mybreaks
+@
+\texttt{transformSeries} (together with \texttt{method="override\_splitting"}) generates the new subseries. 
+<<transform,warning=FALSE,tidy=TRUE,warning=FALSE>>=
+traj1.sp.tr<-transformSeries(object=traj1,method='override_splitting',breakpoints=mybreaks)
+traj1.sp.tr
+@
+Another useful application of \texttt{method="override\_splitting"} is the manual split of the series. For example, if the user is not satisfied with the automatic split that \texttt{method="splitting"} offers, he can override it by setting the \texttt{breakpoints} parameter the desired splits. In the above example, the transformation of \texttt{traj1} with 9 chosen breakpoints resulted in \texttt{traj1.sp.tr}, that has 12 trajectories (subseries). Note that calling the transformed object will always report the original object as well, for tracking purposes.
+
+\subsection{Step 2: Segmentation and denoising}
+In this step, each series (or subseries if \texttt{transformSeries} was performed) is segmented by the Segment Neighborhoods (SegNeigh) method [4]. Each segment \emph{q} = 1, ..., \emph{Q} (\emph{Q} is the total number of segments estimated in all series) is subsequently smoothed by wavelet decomposition and shrinkage [5]. The segments will be used for the subpopulation estimation (sets of clustered segments define a subpopulation). The denoising removes the data autocorrelation and generates an "identity" vector for each segment that is used in clustering. 
+ 
+<<plot-denoise,warning=FALSE,eval=FALSE,message=FALSE>>=
+traj1.denoise<-denoiseSegments(object=traj1.tr,seg_method="SegNeigh",maxQ=15,fn=1,factor=0.8,thresh_level=TRUE,minobs=200)
+@
+
+\subsection{Step 3: Subpopulation estimation}
+The data from each denoised segment are summarized (in a vector of quantiles) and used in hierarchical clustering that assesses segments similarity (Euclidean distances) and groups similar segments together in a hierarchical tree fashion. The user inspects the tree structure, the time series plots and the significance of the clusters (if \emph{pvclust} algorithm [6] is used) to decide how many and which subpopulations to derive. Here we illustrate subpopulation identification using the \emph{pvclust} algorithm. The alternative, simple hierarchical clustering option will also discussed later.
+To use \emph{pvclust} clustering, we first estimate the \emph{multi-scale bootstrap} p-values:
+<<pvals,eval=FALSE>>=
+pvals<-clusterPV(object=traj1.denoise,bootstrap=500)
+@
+We will now use the p-values in the hierarchical clustering to aid our grouping of segments.
+<<clusterPV,warning=FALSE,eval=FALSE,tidy=TRUE>>=
+traj1.ss<-clusterSegments(object=traj1.denoise,intervention = "pvclust",pv=pvals)
+##Segment grouping. Click on the root of the groups you want clustered.
+##Please ensure that ALL segments are grouped (boxed).
+##Otherwise, function will not exit.
+##To exit, click Esc (Windows/Linux) or Ctrl-click (Mac)
+@
+\begin{figure}[!htb]
+\includegraphics[width=6in]{traj1ss0}
+\caption{\texttt{clusterSegments} run with \emph{pvclust}. The top figure shows the initial segments (product of \texttt{denoiseSegment}) and the bottom figure shows the resulting clustering using \emph{pvclust}. Here, the segments have been grouped into 6 subpopulations (boxed).}
+\end{figure}
+The top plot shows the segmented data for each (sub)series. The vertical lines separate each (sub)series, within which each segment has a unique color. The bottom plot shows the result of the \emph{pvclust} algorithm, consisting of a simple hierarchical tree (Euclidean distances and average linkage; obtained by the \emph{hclust} function) and the two kinds of estimated p-values at each node. The ones in red (Approximately Unbiased; AU) are more reliable than the ones in green (Bootstrap Probability; BP)[6]. 
+
+To describe how \emph{pvclust} inference is made, assume two disjoint segment sets $q_i$ $\cap$ $q_j$ = 0 for two vectors \emph{i}, \emph{j} $\in$ [1, ..., \emph{Q}]. The null hypothesis of "$H_0$: $q_i$ and $q_j$ are clustered together" is rejected if the p-value of the respective node is lower than a threshold. Here, we avoid explicitly specifying the threshold (e.g. 0.05) because (1) it depends on the user's assumptions on how many clusters he wants to identify (a priori assumption aided by data visualization) and (2) the p-values are meant to be provide evidence of possible subpopulations and only help the user decide which subpopulations can be meaningful.
+
+Practically, the user wishes to identify a small number of ergodic subpopulation, so the focus is on the p-values of the top nodes.  In this example, based on the estimated AU p-values we estimate 6 subpopulations which are subsequently plotted in Figure 6. 
+
+<<eval=FALSE>>=
+plot(traj1.ss)
+@
+\begin{figure}[!htb]
+\includegraphics[width=6in]{traj1ss1}
+\caption{Result of the \texttt{clusterSegments grouping}, with segments coloured according to their respective subpopulations.}
+\end{figure}
+
+Instead of \emph{pvclust} the user can simply use hierarchical clustering to derive the subpopulations of interest. This is done in two alternative ways: (1) by simply specifying the number of subpopulations to be identified (the algorithm requests a value and splits automatically) and (2) by interactive, point and click user intervention on the plot according to which the clusters are separated based on height (see $?$hclust). These are more trivial but ultimately effective subpopulation identification options. 
+
+\subsubsection{Obtaining the subpopulation intervals}
+The resulted subpopulations and the respective snapshot intervals they occur can be obtained by the following convenience function:
+<<getIntervals>>=
+getIntervals(traj1.ss)
+@ 
+ 
+\subsection{Step 4: Diagnostic plots}
+This post-processing step should always performed to assess the validity of the results and especially of the wavelet modeling. We assume that the residuals of the model are approximately normally distributed N(0,$\sigma^2$) or, at least, symmetrically distributed around 0. Also, the residuals should not exhibit significant autocorrelation coefficients. We run a series of statistical tests whose results we visualize in terms of autocorrelation plots, histograms and p-values for the significance of the null hypothesis "$H_0$: the residuals are N(0,$\sigma^2$) distributed".   
+
+<<warning=FALSE,tidy=TRUE,eval=FALSE>>=
+diagnosticPlots(object=traj1.ss,norm.test="KS",single.series=TRUE)
+@
+\begin{figure}[!htb]
+\includegraphics[width=6in]{diagplots}
+\caption{diagnosticPlots}
+\end{figure}
+\clearpage
+\section{Appendix}
+In this section we will describe the case of series differentiation, which is performed by function \texttt{transformedSeries}. As mentioned earlier, differentiation is suitable for series exhibiting a trend-like behavior causing the weak stationarity assumption to fail. Below, we simulate a set of data that could be appropriately analyzed with this method.  
+<<>>=
+x<-getTraj(traj1.tr)[['D_GBTOT3_1']]
+y<-x[,2]-35; y1<-y[1:2000]; y2<-y[2001:length(y)]+17
+ss<-c(seq(50,length(y2),100),length(y2))
+for(i in 1:(length(ss)-1)) y2[ss[i]:ss[(i+1)]]<-y2[ss[i]:ss[(i+1)]]+i^1.85
+y<-cbind(x[,1],c(y1,y2))
+simtraj<-parseTraj(files=list(y),fromfile=FALSE)
+simtraj
+@
+
+<<eval=FALSE>>=
+plot(simtraj)
+@
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=5in]{simtraj}
+\caption{The simulated series from \texttt{D\_GBTOT3\_1} }
+\end{figure}
+
+The plot above presents our simulated series, obtained by shifting downwards the \texttt{D\_GBTOT3\_1} data by 35 and altering, after t = 2000 the increase rate as \emph{$B_t$ = k $\times$ $B_t^{1.85}$}, where for the first 50 observations we use initial value k = 1 and increase k = k + 1 for subsequent disjoint segments of 100 observations each. Additionally, at t = 2000 we shifted the series upwards by 17. In this way the simulated data (\texttt{simtraj})resemble a real, more variable than \texttt{D\_GBTOT3\_1}.
+
+In the first step, we will use \texttt{transformSeries} with \texttt{method="splitting"} to divide the series into two subseries, \emph{s1} and \emph{s2}. 
+<<tidy=TRUE,warning=FALSE>>=
+simtraj.tr<-transformSeries(object=simtraj,method='splitting',breakpoints=1)
+simtraj.tr
+@
+<<eval=FALSE>>=
+plot(simtraj.tr)
+@
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=5in]{simtrajtr}
+\caption{The transformed series}
+\end{figure}
+The BinSeg algorithm successfully identified the splitting point at t = 2000 (red line). We run the adf test which for \emph{s2} estimates adf p-value = 0.077, implying that we do not have enough evidence to reject the null hypothesis of non-stationarity. If we split \emph{s2} again, we take very small segments (green lines), which by default our methodology does not accept (the minimum length of a segment is arbitrarily set to 200). If we consider a subset of these segments to split \emph{s2}, the adf test will fail for certain series (not shown). Accepting these segmentation results is not methodologically correct [4]. 
+
+For such cases we suggest running \texttt{transformSeries} with \texttt{method="differentiation"}. 
+<<tidy=TRUE,warning=FALSE,eval=FALSE>>=
+simtraj.tr2<-transformSeries(object=simtraj.tr,method='differentiation')
+simtraj.tr2
+@
+<<eval=FALSE>>=
+plotDiff(simtraj.tr2,name="1_2")
+@
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=5in]{simtrajtr2}
+\caption{Second segment before and after differentiation}
+\end{figure}
+The plot shows the differentiated data of \emph{s2}, \emph{D} = $B_t$ - $B_{t-1}$, and the segments identified. Evidently, no significantly different segments are present (the one at the end is much smaller than 200 observations). In practice (long series like the one we studied above), we might conclude that the whole \emph{s2} belongs to a transition-like period. Notice that the differentiated data fluctuates around 0 and thus they are not comparable to the original free binding energies. For this reason \emph{D} is used for segmentation only. Once the segments have been estimated, they are applied to the original, $B_t$, data that are subsequently denoised and clustered.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=5in]{simclust}
+\caption{Final segmentation results of the simulated series}
+\end{figure}
+\clearpage
+\addcontentsline{toc}{section}{References}
+\begin{thebibliography}{9}
+\bibitem{zhou2012} Zhou W., Motakis E., Fuentes G. and Verma S.C. (2012).\emph{Macrostate Identification from Biomolecular Simulations through Time Series Analysis.}.J. Chem. Inf. Model., 2012, 52 (9), pp 2319-2324
+\bibitem{low2013} Low, D.H.P, Motakis E. (2013) .\emph{deltaGseg: macrostate estimation via molecular dynamics simulations and multiscale time series analysis.} Bioinformatics 29 (19), 2501-2502
+\bibitem{dickey1979} Dickey, D.A. and W.A. Fuller (1979) \emph{Distribution of the Estimators for Autoregressive Time Series with a Unit Root,} Journal of the American Statistical Association, 74, p. 427-431.
+\bibitem{auger1989}Auger, I. E.; Lawrence, C. E. \emph{Algorithms for the optimal identification of segment neighborhoods.} Bull. Math. Biol. 1989, 51(1), 39-54.
+\bibitem{nason2008}Nason, G.P. (2008) \emph{Wavelet methods in Statistics with R.} Springer, New York.
+\bibitem{shimodaira2004}Shimodaira, H. (2004) \emph{Approximately unbiased tests of regions using multistep-multiscale bootstrap resampling,}Annals of Statistics, 32, 2616-2641.
+\bibitem{agostino1973}D'Agostino R.B., Pearson E.S. (1973)\emph{Tests for Departure from Normality}, Biometrika 60, 613-22.
+\end{thebibliography}
+<<>>=
+sessionInfo()
+@
+\end{document}

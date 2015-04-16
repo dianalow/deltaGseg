@@ -1,0 +1,37 @@
+import(methods,
+       ggplot2,
+       changepoint,
+       wavethresh,
+       tseries,
+       pvclust,
+       fBasics,
+       reshape,
+       scales,
+       grid
+)
+
+exportClasses(
+    "SegSeriesTrajectories",
+    "SegTrajectories",
+    "Trajectories",
+    "TransTrajectories"
+)
+export("parseTraj")
+exportMethods(
+    "chooseBreaks",
+    "splitTraj",
+    "transformSeries",
+    "plotDiff",
+    "clusterPV",
+    "denoiseSegments",
+    "clusterSegments",
+    "diagnosticPlots",
+    "getAVD",
+    "getBreaks",
+    "getTNames",
+    "getSegments",
+    "getTraj",
+    "getIntervals",
+    "plot",
+    "show" 
+)
