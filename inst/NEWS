@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+v1.9.0
+- function name change in package changepoint (multiple.mean.norm --> cpt.mean)
+
+>>>>>>> master
 v1.1.3
 - corrected errors generated in denoiseSegments when segments are too small
 - refined plotting with data that has many subpopulations (>10)

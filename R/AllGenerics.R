@@ -264,7 +264,11 @@ setMethod("denoiseSegments",
                   dat<-object@difftraj[[filenames[ff]]][,2]
                 }
               }
+<<<<<<< HEAD
               res<-multiple.mean.norm(dat,mul.method=seg_method,penalty="Asymptotic",pen.value=0.01,Q=maxQ,class=FALSE)
+=======
+              res<-cpt.mean(dat,method=seg_method,penalty="Asymptotic",pen.value=0.01,Q=maxQ,class=FALSE)
+>>>>>>> master
               if(seg_method=="BinSeg") {
                 mm_est_binseg<-res$cps[1,1:res$op.cpts]
                 cp<-sort(c(0,mm_est_binseg,length(dat)))
@@ -533,8 +537,13 @@ setMethod("splitTraj",
             mm<-as.list(rep(0,ntraj))
             for(i in 1:ntraj){
               dat<-object@trajlist[[i]]
+<<<<<<< HEAD
               mm_est_binseg<-multiple.mean.norm(dat[,2],mul.method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=segsplits[i],class=FALSE)
               mm[[i]]<-sort(mm_est_binseg$cps[1,1:mm_est_binseg$op.cpts])
+=======
+              mm_est_binseg<-cpt.mean(dat[,2],method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=segsplits[i],class=FALSE)
+              mm[[i]]<-mm_est_binseg#sort(mm_est_binseg$cps[1,1:mm_est_binseg$op.cpts])
+>>>>>>> master
               names(mm)[i]<-tnames[i]
             }
             return(mm)
@@ -598,8 +607,13 @@ setMethod("transformSeries",
               }
               
               else if(method=="splitting"){
+<<<<<<< HEAD
                 mm_est_binseg<-multiple.mean.norm(dat[,2],mul.method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=breakpoints,class=FALSE)
                 mm<-c(sort(mm_est_binseg$cps[1,1:mm_est_binseg$op.cpts]),nrow(dat))
+=======
+                mm_est_binseg<-cpt.mean(dat[,2],method="BinSeg",penalty="Asymptotic",pen.value=0.01,Q=breakpoints,class=FALSE)
+                mm<-mm_est_binseg#c(sort(mm_est_binseg$cps[1,1:mm_est_binseg$op.cpts]),nrow(dat))
+>>>>>>> master
                 k<-1
                 
                 for(j in 1:length(mm)){
