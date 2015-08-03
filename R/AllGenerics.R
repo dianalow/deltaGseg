@@ -264,7 +264,9 @@ setMethod("denoiseSegments",
                   dat<-object@difftraj[[filenames[ff]]][,2]
                 }
               }
+              #changed due to changepoint function wrap!
               res<-cpt.mean(dat,method=seg_method,penalty="Asymptotic",pen.value=0.01,Q=maxQ,class=FALSE)
+              
               if(seg_method=="BinSeg") {
                 mm_est_binseg<-res$cps[1,1:res$op.cpts]
                 cp<-sort(c(0,mm_est_binseg,length(dat)))
