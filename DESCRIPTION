@@ -1,10 +1,10 @@
 Package: deltaGseg
 Type: Package
 Title: deltaGseg
-Version: 1.8.1
+Version: 1.8.2
 Date: 2015-08-03
 Author: Diana Low, Efthymios Motakis
-Maintainer: Diana Low <dlow@imcb.a-star.edu.sg>
+Maintainer: Diana Low <lowdiana@gmail.com>
 Description: Identifying distinct subpopulations through multiscale time series analysis
 License: GPL-2
 Depends: R (>= 2.15.1), methods, ggplot2, changepoint, wavethresh, tseries, pvclust, fBasics, grid, reshape, scales
